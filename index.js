@@ -1,51 +1,51 @@
 const express = require("express");
-let mysql = require("mysql2");
+const mysql = require("mysql2");
 const app = express();
 const PORT = 3000;
+
+// Middleware
 app.use(express.json());
-app.use(express.utlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 
-app.get("/", (req,res) => {
+// Endpoint utama
+app.get("/", (req, res) => {
     res.send("Hello World!");
-})
-
-app.listen(PORT, () => {
-    console.log(`server is running on port ${PORT}`);
 });
 
+// Koneksi database
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'Faradila15.',
+    password: 'Oranggabut712',
     database: 'mahasiswa',
-    port: 3309
+    port: 3309 // ubah sesuai port MySQL kamu
 });
 
-db.connect ((err) => {
+db.connect((err) => {
     if (err) {
-        console.error('Error conection to the database:' + err.stack);
+        console.error('Error connecting to the database: ' + err.stack);
         return;
     }
-    console.log('koneksi berhasil!');
+    console.log('Koneksi ke database berhasil!');
 });
 
-app.get('api/mahasiswa', (req, res) => {
-    db.query('SELECT * from biodata', (err,results) => {
-        if(err) {
+// GET semua mahasiswa
+app.get('/api/mahasiswa', (req, res) => {
+    db.query('SELECT * FROM biodata', (err, results) => {
+        if (err) {
             console.error('Error executing query: ' + err.stack);
-            res.status(500).send('Error fetching users');
-            return;
+            return res.status(500).send('Error fetching users');
         }
         res.json(results);
-    });
+    });
 });
 
-
+// POST tambah mahasiswa
 app.post('/api/mahasiswa', (req, res) => {
-    const {nama, alamat, agama} = req.body;
+    const { nama, alamat, agama } = req.body;
 
     if (!nama || !alamat || !agama) {
-        return res.status(400).json({message : "Nama, alamat, dan agama harus diiisi."});
+        return res.status(400).json({ message: "Nama, alamat, dan agama harus diisi." });
     }
 
     db.query(
@@ -54,18 +54,17 @@ app.post('/api/mahasiswa', (req, res) => {
         (err, results) => {
             if (err) {
                 console.error(err);
-                return res.status(500).json({message: "Database Error"});
+                return res.status(500).json({ message: "Database Error" });
             }
-            res.status(201).json({message: "User created successfully"});
-        }
-    );
+            res.status(201).json({ message: "User created successfully" });
+        }
+    );
 });
 
-
-
+// PUT update mahasiswa
 app.put('/api/mahasiswa/:id', (req, res) => {
     const userId = req.params.id;
-    const {nama, alamat, agama} = req.body;
+    const { nama, alamat, agama } = req.body;
 
     db.query(
         "UPDATE biodata SET nama = ?, alamat = ?, agama = ? WHERE id = ?",
@@ -75,24 +74,30 @@ app.put('/api/mahasiswa/:id', (req, res) => {
                 console.error(err);
                 return res.status(500).json({ message: "Database Error" });
             }
-          
+
             if (results.affectedRows === 0) {
                 return res.status(404).json({ message: "User not found" });
             }
 
             res.json({ message: "User updated successfully" });
         }
-    );
+    );
 });
 
+// DELETE hapus mahasiswa
 app.delete('/api/mahasiswa/:id', (req, res) => {
     const userId = req.params.id;
-    db.query( 'DELETE FROM biodata WHERE id = ?', [userId], (err, results) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).json({ message: "Database Error" });
-            }
-            res.json({ message: "User Delete Successfully" });
-        }
-    );
+
+    db.query('DELETE FROM biodata WHERE id = ?', [userId], (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ message: "Database Error" });
+        }
+        res.json({ message: "User deleted successfully" });
+    });
+});
+
+// Jalankan server
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
